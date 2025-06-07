@@ -1,0 +1,141 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 2,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "aen6gn9kmy48wf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "dataset": "afstudeer_project",
+          "datasource": {
+            "type": "mysql",
+            "uid": "aen6gn9kmy48wf"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n  ds.created_at       AS DatumTijd,\r\n  ds.drinktijd        AS Tijd_s\r\nFROM drinksessies ds\r\nJOIN deelnemers d ON d.id = ds.deelnemer_id\r\nWHERE d.naam = '$Deelnemer'\r\n  AND $__timeFilter(ds.created_at)\r\nORDER BY ds.created_at DESC;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Drinkbeurten $Deelnemer",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 41,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "Jorrit",
+          "value": "Jorrit"
+        },
+        "definition": "SELECT DISTINCT naam FROM deelnemers ORDER BY naam;\n",
+        "name": "Deelnemer",
+        "options": [],
+        "query": "SELECT DISTINCT naam FROM deelnemers ORDER BY naam;\n",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "2025-06-05T19:47:39.165Z",
+    "to": "2025-06-06T19:47:39.165Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "data per deelnemer",
+  "uid": "c94bd9cf-c885-4b6d-9b9f-6f4858f156dd",
+  "version": 2
+}

@@ -1,0 +1,67 @@
+/* Algemene styling */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f2f2f2;
+  margin: 0;
+  padding: 0;
+}
+
+/* Welkomstpagina */
+.welcome-container {
+  max-width: 600px;
+  margin: 80px auto;
+  background: #fff;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  border-radius: 4px;
+}
+.welcome-container h1 { color: #333; margin-bottom: 20px; }
+.welcome-container p { color: #555; margin-bottom: 30px; }
+
+/* Generieke knop-styling */
+.btn {
+  display: inline-block;
+  margin: 5px;
+  padding: 12px 24px;
+  background-color: #007BFF;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+.btn:hover { background-color: #0056b3; }
+
+/* Aanmeldformulier */
+.form-container {
+  width: 350px;
+  margin: 80px auto;
+  background: #fff;
+  padding: 30px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  border-radius: 4px;
+}
+.form-container h2 { text-align: center; color: #333; margin-bottom: 20px; }
+.form-container label { display: block; margin-bottom: 5px; color: #333; }
+.form-container input[type="text"],
+.form-container input[type="email"] {
+  width: 100%; padding: 10px; margin-bottom: 15px;
+  border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+}
+.form-container input[type="submit"] {
+  width: 100%; padding: 10px;
+  background: #007BFF; color: #fff; border: none;
+  border-radius: 4px; cursor: pointer; transition: background 0.3s;
+}
+.form-container input[type="submit"]:hover { background-color: #0056b3; }
+
+/* Dashboardpagina */
+.dashboard-container {
+  width: 350px;
+  margin: 80px auto;
+  background: #fff; padding: 30px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  border-radius: 4px; text-align: center;
+}
+.dashboard-container h2 { color: #333; margin-bottom: 20px; }
+.dashboard-container p { color: #333; margin-bottom: 15px; }

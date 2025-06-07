@@ -1,0 +1,316 @@
+[
+    {
+        "id": "302d391debbb750c",
+        "type": "tab",
+        "label": "Flow 2",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "mqtt_reg_debug",
+        "type": "mqtt in",
+        "z": "302d391debbb750c",
+        "name": "MQTT In: registratie",
+        "topic": "adfundum/data",
+        "qos": "2",
+        "datatype": "auto",
+        "broker": "3c1c46aa7dca8a2f",
+        "nl": false,
+        "rap": false,
+        "inputs": 0,
+        "x": 170,
+        "y": 220,
+        "wires": [
+            [
+                "json_reg_debug"
+            ]
+        ]
+    },
+    {
+        "id": "json_reg_debug",
+        "type": "json",
+        "z": "302d391debbb750c",
+        "name": "Parse JSON",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 430,
+        "y": 220,
+        "wires": [
+            [
+                "501e8a798a6d6666"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_meas_debug",
+        "type": "mqtt in",
+        "z": "302d391debbb750c",
+        "name": "MQTT In: meting",
+        "topic": "nodeRed/timer",
+        "qos": "2",
+        "datatype": "auto",
+        "broker": "3c1c46aa7dca8a2f",
+        "nl": false,
+        "rap": false,
+        "inputs": 0,
+        "x": 160,
+        "y": 360,
+        "wires": [
+            [
+                "82a981a734fe6afe"
+            ]
+        ]
+    },
+    {
+        "id": "173ebf8dcf40a2b1",
+        "type": "mysql",
+        "z": "302d391debbb750c",
+        "mydb": "79908e317c7b1dd2",
+        "name": "",
+        "x": 1420,
+        "y": 360,
+        "wires": [
+            [
+                "prepare_email"
+            ]
+        ]
+    },
+    {
+        "id": "prepare_email",
+        "type": "function",
+        "z": "302d391debbb750c",
+        "name": "Prepare Email",
+        "func": "// Controleer of alle velden aanwezig zijn\nif (!msg.email || !msg.naam || typeof msg.drinkTime !== 'number') {\n    node.error('Ontbrekende velden voor e-mail: ', {\n        email: msg.email,\n        naam: msg.naam,\n        drinkTime: msg.drinkTime\n    });\n    return null;\n}\n\n// Stel de e-mailvelden in\nmsg.to      = msg.email;\nmsg.topic   = 'AdFundum Timer ? Je drinktijd';\nmsg.payload = \n`Hallo ${msg.naam},\n\nJe drinktijd was ${msg.drinkTime.toFixed(2)} seconden.\n\nBedankt voor je deelname!\n\nGroetjes,\nHet AdFundum-team`;\n\n// (optioneel) zet vanuit hier nog headers of attachments\n// msg.headers = { 'X-Priority': '1 (Highest)' };\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1660,
+        "y": 360,
+        "wires": [
+            [
+                "331a776f932dd701"
+            ]
+        ]
+    },
+    {
+        "id": "331a776f932dd701",
+        "type": "e-mail",
+        "z": "302d391debbb750c",
+        "server": "smtp.gmail.com",
+        "port": "465",
+        "authtype": "BASIC",
+        "saslformat": true,
+        "token": "oauth2Response.access_token",
+        "secure": true,
+        "tls": true,
+        "name": "",
+        "dname": "",
+        "x": 1910,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "501e8a798a6d6666",
+        "type": "function",
+        "z": "302d391debbb750c",
+        "name": "INSERT Deelnemer",
+        "func": "// payload: { naam, email, glasID }\n// zorg dat glasID numeriek is\nconst glassId = Number(msg.payload.glasID);\nif (isNaN(glassId)) {\n    node.error('Ongeldige glasID', msg);\n    return null;\n}\n\n// bewaar glasId voor later\nmsg.glassId = glassId;\n\n// bouw INSERT-query\nmsg.topic = \"INSERT INTO deelnemers (naam, email) VALUES (?, ?)\";\nmsg.payload = [msg.payload.naam, msg.payload.email];\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 220,
+        "wires": [
+            [
+                "18e896f31a968d49"
+            ]
+        ]
+    },
+    {
+        "id": "9dbe4c806bbcc989",
+        "type": "function",
+        "z": "302d391debbb750c",
+        "name": "INSERT Drinksessie",
+        "func": "// rows van je SELECT; bevat { deelnemerId, naam, email }\nconst rows = msg.payload;\nif (!Array.isArray(rows) || rows.length === 0) {\n    node.error('Geen deelnemer gevonden', msg);\n    return null;\n}\n\n// Haal alle velden uit de SELECT\nconst deelnemerId = rows[0].deelnemerId;\nconst naam        = rows[0].naam;\nconst email       = rows[0].email;\n\n// Haal drinkTime uit msg (gezet in je Haal Deelnemer Op node)\nconst drinkTime = msg.drinkTime;\nif (typeof drinkTime !== 'number') {\n    node.error('Geen drinkTime gevonden in msg.drinkTime', msg);\n    return null;\n}\n\n// Bewaar ze allemaal in msg zodat Prepare Email ze later kan gebruiken\nmsg.deelnemerId = deelnemerId;\nmsg.naam        = naam;\nmsg.email       = email;\nmsg.drinkTime   = drinkTime;\n\n// Bouw de INSERT voor drinksessies\nmsg.topic   = \"INSERT INTO drinksessies (deelnemer_id, drinktijd) VALUES (?, ?)\";\nmsg.payload = [ deelnemerId, drinkTime ];\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1020,
+        "y": 360,
+        "wires": [
+            [
+                "173ebf8dcf40a2b1"
+            ]
+        ]
+    },
+    {
+        "id": "8a6c636932cc8d74",
+        "type": "mysql",
+        "z": "302d391debbb750c",
+        "mydb": "79908e317c7b1dd2",
+        "name": "",
+        "x": 800,
+        "y": 360,
+        "wires": [
+            [
+                "9dbe4c806bbcc989"
+            ]
+        ]
+    },
+    {
+        "id": "18e896f31a968d49",
+        "type": "mysql",
+        "z": "302d391debbb750c",
+        "mydb": "79908e317c7b1dd2",
+        "name": "",
+        "x": 800,
+        "y": 220,
+        "wires": [
+            [
+                "ba3d2af562e69a38"
+            ]
+        ]
+    },
+    {
+        "id": "ba3d2af562e69a38",
+        "type": "function",
+        "z": "302d391debbb750c",
+        "name": "Prepare Select ID",
+        "func": "const res = msg.payload;\n// mysql-node geeft hier een object met o.a. insertId\nif (!res || typeof res.insertId !== 'number') {\n  node.error('Geen insertId terug van INSERT', msg);\n  return null;\n}\n\n// stop deelnemerId en glasId in msg voor de volgende stap\nmsg.deelnemerId = res.insertId;\nmsg.glassId = msg.glassId;  // overgenomen uit eerdere Function\n\n// bouw SELECT (optioneel, je kunt deelnameId ook direct gebruiken \n// maar SELECT laat zien dat je uit DB haalt)\nmsg.topic = \"SELECT id FROM deelnemers WHERE id = ?\";\nmsg.payload = [msg.deelnemerId];\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 220,
+        "wires": [
+            [
+                "6cd7a61b52364101"
+            ]
+        ]
+    },
+    {
+        "id": "6cd7a61b52364101",
+        "type": "mysql",
+        "z": "302d391debbb750c",
+        "mydb": "79908e317c7b1dd2",
+        "name": "",
+        "x": 1160,
+        "y": 220,
+        "wires": [
+            [
+                "1cc821d5dc2c512c"
+            ]
+        ]
+    },
+    {
+        "id": "1cc821d5dc2c512c",
+        "type": "function",
+        "z": "302d391debbb750c",
+        "name": "function 2",
+        "func": "// SELECT geeft een array rows terug, bv. [{id: 42}]\nconst rows = msg.payload;\nif (!Array.isArray(rows) || rows.length === 0) {\n    node.error('Geen deelnemer gevonden bij SELECT', msg);\n    return null;\n}\n\nconst deelnemerId = rows[0].id;\nconst glassId = msg.glassId;\n\nmsg.topic = \"UPDATE glazen SET deelnemer_id = ? WHERE id = ?\";\nmsg.payload = [deelnemerId, glassId];\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1300,
+        "y": 220,
+        "wires": [
+            [
+                "173ebf8dcf40a2b1"
+            ]
+        ]
+    },
+    {
+        "id": "95ea059607f2a7be",
+        "type": "function",
+        "z": "302d391debbb750c",
+        "name": "haal deelnemer op",
+        "func": "// msg.payload = { uid: \"1DD2F3CA930000\", drinktijd: 1.21 }\n\n////////////////////////////////////////\n// 1) Input parsen & validatie\n////////////////////////////////////////\nconst uid        = msg.payload.uid;\nconst drinkTime  = parseFloat(msg.payload.drinktijd);\n\nif (!uid || typeof uid !== 'string') {\n  node.error('Ongeldige of ontbrekende UID in payload', msg);\n  return null;\n}\nif (isNaN(drinkTime)) {\n  node.error('Ongeldige drinktijd: ' + msg.payload.drinktijd, msg);\n  return null;\n}\n\n// bewaar voor later gebruik\nmsg.uid        = uid;\nmsg.drinkTime  = drinkTime;\n\n////////////////////////////////////////\n// 2) SELECT bouwen op basis van UID\n////////////////////////////////////////\nmsg.topic = `\n  SELECT \n    g.deelnemer_id AS deelnemerId,\n    d.naam         AS naam,\n    d.email        AS email\n  FROM glazen g\n  JOIN deelnemers d ON g.deelnemer_id = d.id\n  WHERE g.uid = ?\n`;\nmsg.payload = [ uid ];\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 360,
+        "wires": [
+            [
+                "8a6c636932cc8d74"
+            ]
+        ]
+    },
+    {
+        "id": "82a981a734fe6afe",
+        "type": "json",
+        "z": "302d391debbb750c",
+        "name": "Parse JSON",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 430,
+        "y": 360,
+        "wires": [
+            [
+                "95ea059607f2a7be"
+            ]
+        ]
+    },
+    {
+        "id": "3c1c46aa7dca8a2f",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "192.168.137.215",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "79908e317c7b1dd2",
+        "type": "MySQLdatabase",
+        "name": "Database",
+        "host": "172.18.0.3",
+        "port": "3306",
+        "db": "afstudeer_project",
+        "tz": "+2",
+        "charset": "UTF8"
+    }
+]
